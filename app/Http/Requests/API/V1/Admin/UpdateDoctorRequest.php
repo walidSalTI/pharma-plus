@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\API\V1\Admin;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateDoctorRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'specialization' => ['sometimes', 'string', 'max:255'],
+            'verification_status' => ['sometimes', 'string', 'in:unverified,pending,approved,rejected'],
+        ];
+    }
+}
