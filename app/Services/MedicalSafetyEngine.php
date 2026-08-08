@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 class MedicalSafetyEngine
 {
     public function __construct(
-        private LlamaApiService $llamaApi
+        private readonly LlamaApiService $llamaApi
     ) {}
 
     // ═══════════════════════════════════════════════════════════════════
@@ -35,7 +35,7 @@ class MedicalSafetyEngine
             ->whereIn('active_ingredient_id', $medicationIngredientIds)
             ->whereIn('chronic_disease_id', $patientDiseases->pluck('id'))
             ->get()
-            ->keyBy(fn ($item) => $item->active_ingredient_id . '_' . $item->chronic_disease_id);
+            ->keyBy(fn ($item) => $item->active_ingredient_id.'_'.$item->chronic_disease_id);
 
         $ingredients = DB::table('active_ingredients')
             ->whereIn('id', $medicationIngredientIds)
@@ -51,27 +51,32 @@ class MedicalSafetyEngine
 
         foreach ($medicationIngredientIds as $ingredientId) {
             $ingredient = $ingredients->get($ingredientId);
-            if (!$ingredient) continue;
+            if (! $ingredient) {
+                continue;
+            }
 
             foreach ($patientDiseases as $disease) {
-                $record = $existingMappings->get($ingredientId . '_' . $disease->id);
+                $record = $existingMappings->get($ingredientId.'_'.$disease->id);
 
-                if (!$record) {
+                if (! $record) {
                     $newItems[] = [
-                        'id'            => $nextTempId--,
-                        'is_new'        => true,
+                        'id' => $nextTempId--,
+                        'is_new' => true,
                         'ingredient_id' => $ingredientId,
-                        'drug'          => $ingredient->ingredient_name_en,
-                        'disease'       => $disease->id,
-                        'disease_name'  => $disease->name_en,
+                        'drug' => $ingredient->ingredient_name_en,
+                        'disease' => $disease->id,
+                        'disease_name' => $disease->name_en,
                     ];
+
                     continue;
                 }
 
                 if ($record->is_ai_verified) {
                     if ((int) $record->risk_level > 0) {
-                        $key = 'disease_' . $disease->id;
-                        if (in_array($key, $seenKeys, true)) continue;
+                        $key = 'disease_'.$disease->id;
+                        if (in_array($key, $seenKeys, true)) {
+                            continue;
+                        }
                         $seenKeys[] = $key;
 
                         $isSafe = false;
@@ -98,7 +103,7 @@ class MedicalSafetyEngine
 
         $allItems = array_merge($unverifiedItems, $newItems);
 
-        if (!empty($allItems)) {
+        if ($allItems !== []) {
             $aiResults = $this->llamaApi->evaluateDrugDiseaseBatch($allItems);
 
             if ($aiResults !== null) {
@@ -130,8 +135,10 @@ class MedicalSafetyEngine
                                     );
 
                                 if ($riskLevel > 0) {
-                                    $key = 'disease_' . $item['disease'];
-                                    if (in_array($key, $seenKeys, true)) continue;
+                                    $key = 'disease_'.$item['disease'];
+                                    if (in_array($key, $seenKeys, true)) {
+                                        continue;
+                                    }
                                     $seenKeys[] = $key;
 
                                     $isSafe = false;
@@ -151,7 +158,6 @@ class MedicalSafetyEngine
                             if ($aiRes) {
                                 $riskLevel = (int) $aiRes['severity_rating'];
                                 $explanation = $aiRes['clinical_explanation'] ?? '';
-
                                 DB::table('active_ingredients_chronic_disease')
                                     ->where('id', $item['id'])
                                     ->update([
@@ -160,10 +166,11 @@ class MedicalSafetyEngine
                                         'is_ai_verified' => true,
                                         'updated_at' => now(),
                                     ]);
-
                                 if ($riskLevel > 0) {
-                                    $key = 'disease_' . $item['disease'];
-                                    if (in_array($key, $seenKeys, true)) continue;
+                                    $key = 'disease_'.$item['disease'];
+                                    if (in_array($key, $seenKeys, true)) {
+                                        continue;
+                                    }
                                     $seenKeys[] = $key;
 
                                     $isSafe = false;
@@ -176,22 +183,21 @@ class MedicalSafetyEngine
                                         'verified_by_ai' => true,
                                     ];
                                 }
-                            } else {
-                                if ((int) $record->risk_level > 0) {
-                                    $key = 'disease_' . $item['disease'];
-                                    if (in_array($key, $seenKeys, true)) continue;
-                                    $seenKeys[] = $key;
-
-                                    $isSafe = false;
-                                    $conflicts[] = [
-                                        'type' => 'disease',
-                                        'risk_level' => (int) $record->risk_level,
-                                        'reason' => $record->ai_explanation ?? $record->conflict_reason ?? 'تضارب محتمل (سقط من تقرير الذكاء الاصطناعي)',
-                                        'disease' => $item['disease_name'],
-                                        'disease_id' => $item['disease'],
-                                        'verified_by_ai' => false,
-                                    ];
+                            } elseif ((int) $record->risk_level > 0) {
+                                $key = 'disease_'.$item['disease'];
+                                if (in_array($key, $seenKeys, true)) {
+                                    continue;
                                 }
+                                $seenKeys[] = $key;
+                                $isSafe = false;
+                                $conflicts[] = [
+                                    'type' => 'disease',
+                                    'risk_level' => (int) $record->risk_level,
+                                    'reason' => $record->ai_explanation ?? $record->conflict_reason ?? 'تضارب محتمل (سقط من تقرير الذكاء الاصطناعي)',
+                                    'disease' => $item['disease_name'],
+                                    'disease_id' => $item['disease'],
+                                    'verified_by_ai' => false,
+                                ];
                             }
                         }
                     }
@@ -204,8 +210,10 @@ class MedicalSafetyEngine
 
                     $record = $item['record'];
                     if ((int) $record->risk_level > 0) {
-                        $key = 'disease_' . $item['disease'];
-                        if (in_array($key, $seenKeys, true)) continue;
+                        $key = 'disease_'.$item['disease'];
+                        if (in_array($key, $seenKeys, true)) {
+                            continue;
+                        }
                         $seenKeys[] = $key;
 
                         $isSafe = false;
@@ -256,8 +264,8 @@ class MedicalSafetyEngine
 
         $recordIndex = [];
         foreach ($allRecords as $record) {
-            $recordIndex[$record->composition_id . '_' . $record->interaction_composition_id] = $record;
-            $recordIndex[$record->interaction_composition_id . '_' . $record->composition_id] = $record;
+            $recordIndex[$record->composition_id.'_'.$record->interaction_composition_id] = $record;
+            $recordIndex[$record->interaction_composition_id.'_'.$record->composition_id] = $record;
         }
 
         $targetIngredients = DB::table('active_ingredients')
@@ -275,28 +283,35 @@ class MedicalSafetyEngine
 
         foreach ($medicationIngredientIds as $targetIngId) {
             $targetIng = $targetIngredients->get($targetIngId);
-            if (!$targetIng) continue;
+            if (! $targetIng) {
+                continue;
+            }
 
             foreach ($patientActiveIngredients as $patientIng) {
-                if ($targetIngId === $patientIng->id) continue;
+                if ($targetIngId === $patientIng->id) {
+                    continue;
+                }
 
-                $record = $recordIndex[$targetIngId . '_' . $patientIng->id] ?? null;
+                $record = $recordIndex[$targetIngId.'_'.$patientIng->id] ?? null;
 
-                if (!$record) {
+                if (! $record) {
                     $ingA = $targetIngId;
                     $ingB = $patientIng->id;
-                    $pairKey = $ingA < $ingB ? $ingA . '_' . $ingB : $ingB . '_' . $ingA;
-                    if (isset($newPairKeys[$pairKey])) continue;
+                    $pairKey = $ingA < $ingB ? $ingA.'_'.$ingB : $ingB.'_'.$ingA;
+                    if (isset($newPairKeys[$pairKey])) {
+                        continue;
+                    }
                     $newPairKeys[$pairKey] = true;
 
                     $newItems[] = [
-                        'id'             => $nextTempId--,
-                        'is_new'         => true,
+                        'id' => $nextTempId--,
+                        'is_new' => true,
                         'ingredient_id_1' => $ingA,
                         'ingredient_id_2' => $ingB,
-                        'drug1'          => $targetIng->ingredient_name_en,
-                        'drug2'          => $patientIng->ingredient_name_en,
+                        'drug1' => $targetIng->ingredient_name_en,
+                        'drug2' => $patientIng->ingredient_name_en,
                     ];
+
                     continue;
                 }
 
@@ -304,8 +319,10 @@ class MedicalSafetyEngine
                     if ((int) $record->risk_level > 0) {
                         $pair = [$targetIngId, $patientIng->id];
                         sort($pair);
-                        $key = 'drug_' . $pair[0] . '_' . $pair[1];
-                        if (in_array($key, $seenKeys, true)) continue;
+                        $key = 'drug_'.$pair[0].'_'.$pair[1];
+                        if (in_array($key, $seenKeys, true)) {
+                            continue;
+                        }
                         $seenKeys[] = $key;
 
                         $isSafe = false;
@@ -342,7 +359,7 @@ class MedicalSafetyEngine
     // ═══════════════════════════════════════════════════════════════════
     private function processDrugBatch(array $allItems, bool &$isSafe, array &$conflicts, array &$seenKeys): void
     {
-        if (empty($allItems)) {
+        if ($allItems === []) {
             return;
         }
 
@@ -381,8 +398,10 @@ class MedicalSafetyEngine
                                 );
 
                             if ($riskLevel > 0) {
-                                $key = 'drug_' . $ids[0] . '_' . $ids[1];
-                                if (in_array($key, $seenKeys, true)) continue;
+                                $key = 'drug_'.$ids[0].'_'.$ids[1];
+                                if (in_array($key, $seenKeys, true)) {
+                                    continue;
+                                }
                                 $seenKeys[] = $key;
 
                                 $isSafe = false;
@@ -415,8 +434,10 @@ class MedicalSafetyEngine
                             if ($riskLevel > 0) {
                                 $pair = $item['pair_ids'];
                                 sort($pair);
-                                $key = 'drug_' . $pair[0] . '_' . $pair[1];
-                                if (in_array($key, $seenKeys, true)) continue;
+                                $key = 'drug_'.$pair[0].'_'.$pair[1];
+                                if (in_array($key, $seenKeys, true)) {
+                                    continue;
+                                }
                                 $seenKeys[] = $key;
 
                                 $isSafe = false;
@@ -432,8 +453,10 @@ class MedicalSafetyEngine
                         } else {
                             $pair = $item['pair_ids'];
                             sort($pair);
-                            $key = 'drug_' . $pair[0] . '_' . $pair[1];
-                            if (in_array($key, $seenKeys, true)) continue;
+                            $key = 'drug_'.$pair[0].'_'.$pair[1];
+                            if (in_array($key, $seenKeys, true)) {
+                                continue;
+                            }
                             $seenKeys[] = $key;
 
                             $isSafe = false;
@@ -458,8 +481,10 @@ class MedicalSafetyEngine
                 $record = $item['record'];
                 $pair = $item['pair_ids'];
                 sort($pair);
-                $key = 'drug_' . $pair[0] . '_' . $pair[1];
-                if (in_array($key, $seenKeys, true)) continue;
+                $key = 'drug_'.$pair[0].'_'.$pair[1];
+                if (in_array($key, $seenKeys, true)) {
+                    continue;
+                }
                 $seenKeys[] = $key;
 
                 $isSafe = false;
@@ -503,8 +528,8 @@ class MedicalSafetyEngine
 
         $recordIndex = [];
         foreach ($allRecords as $record) {
-            $recordIndex[$record->composition_id . '_' . $record->interaction_composition_id] = $record;
-            $recordIndex[$record->interaction_composition_id . '_' . $record->composition_id] = $record;
+            $recordIndex[$record->composition_id.'_'.$record->interaction_composition_id] = $record;
+            $recordIndex[$record->interaction_composition_id.'_'.$record->composition_id] = $record;
         }
 
         $conflicts = [];
@@ -525,30 +550,37 @@ class MedicalSafetyEngine
 
                 $ingredientA = $ingredients->get($ingA);
                 $ingredientB = $ingredients->get($ingB);
-                if (!$ingredientA || !$ingredientB) continue;
+                if (! $ingredientA || ! $ingredientB) {
+                    continue;
+                }
 
-                $record = $recordIndex[$ingA . '_' . $ingB] ?? null;
+                $record = $recordIndex[$ingA.'_'.$ingB] ?? null;
 
-                if (!$record) {
-                    $pairKey = $ingA . '_' . $ingB;
-                    if (isset($newPairKeys[$pairKey])) continue;
+                if (! $record) {
+                    $pairKey = $ingA.'_'.$ingB;
+                    if (isset($newPairKeys[$pairKey])) {
+                        continue;
+                    }
                     $newPairKeys[$pairKey] = true;
 
                     $newItems[] = [
-                        'id'             => $nextTempId--,
-                        'is_new'         => true,
+                        'id' => $nextTempId--,
+                        'is_new' => true,
                         'ingredient_id_1' => $ingA,
                         'ingredient_id_2' => $ingB,
-                        'drug1'          => $ingredientA->ingredient_name_en,
-                        'drug2'          => $ingredientB->ingredient_name_en,
+                        'drug1' => $ingredientA->ingredient_name_en,
+                        'drug2' => $ingredientB->ingredient_name_en,
                     ];
+
                     continue;
                 }
 
                 if ($record->is_ai_verified) {
                     if ((int) $record->risk_level > 0) {
-                        $key = 'drug_' . $ingA . '_' . $ingB;
-                        if (in_array($key, $seenKeys, true)) continue;
+                        $key = 'drug_'.$ingA.'_'.$ingB;
+                        if (in_array($key, $seenKeys, true)) {
+                            continue;
+                        }
                         $seenKeys[] = $key;
 
                         $isSafe = false;

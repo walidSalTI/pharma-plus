@@ -38,7 +38,7 @@ return new class extends Migration
         $driver = DB::connection()->getDriverName();
 
         if ($driver === 'mysql') {
-            DB::statement("ALTER TABLE active_ingredients_chronic_disease CHANGE risk_level_new risk_level TINYINT NULL");
+            DB::statement('ALTER TABLE active_ingredients_chronic_disease CHANGE risk_level_new risk_level TINYINT NULL');
         } else {
             Schema::table('active_ingredients_chronic_disease', function (Blueprint $table) {
                 $table->renameColumn('risk_level_new', 'risk_level');
