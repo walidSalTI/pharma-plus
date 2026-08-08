@@ -9,7 +9,6 @@ use App\Models\Pharmacy;
 use App\Observers\MedicationOrderObserver;
 use App\Policies\PharmacyPolicy;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -33,7 +32,6 @@ class AppServiceProvider extends ServiceProvider
         Model::automaticallyEagerLoadRelationships();
 
         Gate::policy(Pharmacy::class, PharmacyPolicy::class);
-        Broadcast::routes(['middleware' => ['api', 'auth:sanctum']]);
 
         MedicationOrder::observe(MedicationOrderObserver::class);
     }

@@ -44,4 +44,4 @@ Broadcast::channel('pharmacy.{pharmacyId}', function (User $user, string $pharma
     }
 
     return false;
-});
+}, ['guards' => ['sanctum']]);
