@@ -19,8 +19,8 @@ use Log;
 class SearchController extends Controller
 {
     public function __construct(
-        private  MedicalSafetyEngine $safetyEngine,
-        private  AlternativeMappingEngine $alternativeEngine,
+        private readonly MedicalSafetyEngine $safetyEngine,
+        private readonly AlternativeMappingEngine $alternativeEngine,
     ) {}
 
     /**
@@ -208,7 +208,7 @@ class SearchController extends Controller
             'message' => 'Search results retrieved successfully',
         ]);
     }
- 
+
     /**
      * Pre-check interactions between the queried medications (FR-P-2.3).
      *
@@ -324,6 +324,7 @@ class SearchController extends Controller
                     'longitude' => $lng,
                     'created_at' => now(),
                 ]);
+
                 return;
             }
 
@@ -360,11 +361,9 @@ class SearchController extends Controller
             }
 
             // إدخال دفعة واحدة لتقليل الاستعلامات (Batch Insert)
-            if (!empty($records)) {
+            if ($records !== []) {
                 // استخدام unique لمنع تكرار نفس (المادة + اسم المنتج) لنفس طلب البحث
-                $uniqueRecords = collect($records)->unique(function ($item) {
-                    return $item['resolved_product_name'].'_'.$item['resolved_active_ingredient_id'];
-                })->values()->toArray();
+                $uniqueRecords = collect($records)->unique(fn ($item) => $item['resolved_product_name'].'_'.$item['resolved_active_ingredient_id'])->values()->toArray();
 
                 DB::table('search_telemetries')->insert($uniqueRecords);
             }

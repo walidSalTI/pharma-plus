@@ -29,14 +29,16 @@ it('returns disease forecasts', function () {
         ->assertJsonStructure(['data', 'meta']);
 });
 
-it('returns monthly report', function () {
+it('returns the financial summary report', function () {
     extract(actingAsPharmacist());
 
+    $today = now()->toDateString();
+
     $response = $this->withToken($token)
-        ->getJson("/api/v1/pharmacist/pharmacies/{$pharmacy->id}/reports/monthly");
+        ->getJson("/api/v1/pharmacist/pharmacies/{$pharmacy->id}/reports/financial-summary?start_date={$today}&end_date={$today}");
 
     $response->assertStatus(200)
-        ->assertJsonStructure(['data']);
+        ->assertJsonStructure(['status', 'data']);
 });
 
 it('exports inventory', function () {

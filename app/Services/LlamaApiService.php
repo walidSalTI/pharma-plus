@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Exception;
 use Illuminate\Support\Facades\Http;
 use Log;
 
 class LlamaApiService
 {
-    private string $apiKey;
-    private string $baseUrl;
-    private string $model;
+    private readonly string $apiKey;
+
+    private readonly string $baseUrl;
+
+    private readonly string $model;
 
     public function __construct(
-        private MedicalPromptService $promptService
+        private readonly MedicalPromptService $promptService
     ) {
         $this->apiKey = config('services.groq.api_key');
         $this->baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
@@ -24,12 +27,12 @@ class LlamaApiService
     /**
      * Evaluate a batch of drug-disease interactions via Groq.
      *
-     * @param array $items List of ['id' => int, 'drug' => string, 'disease' => string]
+     * @param  array  $items  List of ['id' => int, 'drug' => string, 'disease' => string]
      * @return array|null Array of ['id' => int, 'severity_rating' => int, 'clinical_explanation' => string] or null on failure
      */
     public function evaluateDrugDiseaseBatch(array $items): ?array
     {
-        if (empty($items)) {
+        if ($items === []) {
             return [];
         }
 
@@ -41,12 +44,12 @@ class LlamaApiService
     /**
      * Evaluate a batch of drug-drug interactions via Groq.
      *
-     * @param array $items List of ['id' => int, 'drug1' => string, 'drug2' => string]
+     * @param  array  $items  List of ['id' => int, 'drug1' => string, 'drug2' => string]
      * @return array|null Array of ['id' => int, 'severity_rating' => int, 'clinical_explanation' => string] or null on failure
      */
     public function evaluateDrugDrugBatch(array $items): ?array
     {
-        if (empty($items)) {
+        if ($items === []) {
             return [];
         }
 
@@ -77,8 +80,8 @@ class LlamaApiService
                     ],
                 ]);
 
-            if (!$response->successful()) {
-                Log::warning('Llama Batch API request failed: ' . $response->body());
+            if (! $response->successful()) {
+                Log::warning('Llama Batch API request failed: '.$response->body());
 
                 return null;
             }
@@ -94,19 +97,19 @@ class LlamaApiService
                 return null;
             }
 
-            $parsed = json_decode($content, true);
+            $parsed = json_decode((string) $content, true);
 
             // Expect { "results": [...] }
             return $parsed['results'] ?? null;
-        } catch (\Exception $e) {
-            Log::error('Exception in LlamaApiService Batch: ' . $e->getMessage());
+        } catch (Exception $e) {
+            Log::error('Exception in LlamaApiService Batch: '.$e->getMessage());
 
             return null;
         }
     }
 }
 /*
-response example 
+response example
 {
   "id": "chatcmpl-a1b2c3d4",
   "object": "chat.completion",

@@ -218,7 +218,7 @@ class AuthController extends Controller
             'data' => [
                 'verification_status' => $pharmacist->verification_status,
                 'syndicate_card' => $pharmacist->syndicate_card
-                    ? asset('storage/' . $pharmacist->syndicate_card)
+                    ? asset('storage/'.$pharmacist->syndicate_card)
                     : null,
             ],
         ]);
@@ -244,7 +244,7 @@ class AuthController extends Controller
         $staffPharmacies = $pharmacist->staffPharmacies()
             ->get()
             ->toBase() // تحويل إلى Base Collection لتجنب مشاكل الـ Eloquent merge
-            ->map(fn(Pharmacy $pharmacy) => [
+            ->map(fn (Pharmacy $pharmacy) => [
                 'id' => $pharmacy->id,
                 'name' => $pharmacy->name,
                 'address' => $pharmacy->address,
@@ -262,7 +262,7 @@ class AuthController extends Controller
         $ownedPharmacies = $pharmacist->pharmacies()
             ->get()
             ->toBase() // تحويل إلى Base Collection
-            ->map(fn(Pharmacy $pharmacy) => [
+            ->map(fn (Pharmacy $pharmacy) => [
                 'id' => $pharmacy->id,
                 'name' => $pharmacy->name,
                 'address' => $pharmacy->address,

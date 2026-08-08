@@ -9,11 +9,11 @@ class MedicalPromptService
     /**
      * Build batch prompt for drug-disease interactions
      *
-     * @param array $items List of ['id' => int, 'drug' => string, 'disease' => string]
+     * @param  array  $items  List of ['id' => int, 'drug' => string, 'disease' => string]
      * @return array{system: string, user: string}
      */
     public function buildDrugDiseaseBatchPrompt(array $items): array
-    { 
+    {
         $systemPrompt = "You are an expert clinical pharmacist. Evaluate the provided list of drug-disease interactions.
 Rating rules: 0 = Safe / No Risk, 1 = Moderate Risk, 2 = Severe Risk.
 CRITICAL RULE: Patients with Hypertension taking NSAIDs MUST ALWAYS be rated strictly as 2.
@@ -31,14 +31,14 @@ Return STRICT JSON format containing an array under key 'results':
 
         return [
             'system' => $systemPrompt,
-            'user' => "Evaluate interactions:\n" . implode("\n", $formattedList),
+            'user' => "Evaluate interactions:\n".implode("\n", $formattedList),
         ];
     }
 
     /**
      * Build batch prompt for drug-drug interactions
      *
-     * @param array $items List of ['id' => int, 'drug1' => string, 'drug2' => string]
+     * @param  array  $items  List of ['id' => int, 'drug1' => string, 'drug2' => string]
      * @return array{system: string, user: string}
      */
     public function buildDrugDrugBatchPrompt(array $items): array
@@ -60,7 +60,7 @@ Return STRICT JSON format containing an array under key 'results':
 
         return [
             'system' => $systemPrompt,
-            'user' => "Evaluate drug-drug interactions:\n" . implode("\n", $formattedList),
+            'user' => "Evaluate drug-drug interactions:\n".implode("\n", $formattedList),
         ];
     }
 }
