@@ -18,7 +18,7 @@ afterEach(fn () => Mockery::close());
 
 function createIngredient(string $name): ActiveIngredient
 {
-    $ingredient = new ActiveIngredient();
+    $ingredient = new ActiveIngredient;
     $ingredient->ingredient_name_en = $name;
     $ingredient->save();
 
@@ -32,13 +32,13 @@ function patientWithDisease(): array
 {
     $patient = Patient::factory()->create();
 
-    $disease = new ChronicDisease();
+    $disease = new ChronicDisease;
     $disease->code = 'HTN';
     $disease->name_ar = 'ارتفاع ضغط الدم';
     $disease->name_en = 'Hypertension';
     $disease->save();
 
-    $record = new ChronicRecord();
+    $record = new ChronicRecord;
     $record->chronic_disease_id = $disease->id;
     $record->patient_id = $patient->id;
     $record->diagnosis_year = 2020;
@@ -457,13 +457,13 @@ describe('evaluate', function () {
     it('combines verified disease and drug conflicts for a single medication', function () {
         $patient = Patient::factory()->create();
 
-        $disease = new ChronicDisease();
+        $disease = new ChronicDisease;
         $disease->code = 'HTN';
         $disease->name_ar = 'hypertension';
         $disease->name_en = 'Hypertension';
         $disease->save();
 
-        $record = new ChronicRecord();
+        $record = new ChronicRecord;
         $record->chronic_disease_id = $disease->id;
         $record->patient_id = $patient->id;
         $record->diagnosis_year = 2020;

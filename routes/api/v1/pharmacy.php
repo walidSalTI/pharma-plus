@@ -149,6 +149,11 @@ Route::prefix('pharmacist')->group(function () {
 
             // Reports (FR-PH-8)
             Route::get('reports/financial-summary', [ReportController::class, 'financialSummary']);
+            Route::get('reports/top-medications', [ReportController::class, 'topMedications']);
+            Route::get('reports/demand', [ReportController::class, 'demand']);
+            Route::get('reports/inventory-expiring', [ReportController::class, 'expiringInventory']);
+            Route::get('reports/slow-moving', [ReportController::class, 'slowMoving']);
+            Route::get('reports/staff-performance', [ReportController::class, 'staffPerformance']);
 
             // Orders (FR-PH-2.3) — list, filter & status lifecycle
             Route::prefix('orders')->group(function () {

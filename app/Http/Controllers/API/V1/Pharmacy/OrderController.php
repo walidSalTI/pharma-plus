@@ -91,7 +91,7 @@ class OrderController extends Controller
         $perPage = min((int) ($validated['per_page'] ?? 20), 100);
         $orders = $query->orderByDesc('created_at')->paginate($perPage);
 
-        $data = $orders->map(fn(MedicationOrder $order) => [
+        $data = $orders->map(fn (MedicationOrder $order) => [
             'order_id' => $order->id,
             'invoice_number' => $order->invoice_number,
             'status' => $order->status,
@@ -104,13 +104,13 @@ class OrderController extends Controller
             'pharmacist_note' => $order->pharmacist_note,
             'notes' => $order->notes,
             'patient_name' => $order->patient?->user
-                ? trim($order->patient->user->f_name . ' ' . $order->patient->user->l_name)
+                ? trim($order->patient->user->f_name.' '.$order->patient->user->l_name)
                 : null,
             'pharmacist_name' => $order->pharmacist?->user
-                ? trim($order->pharmacist->user->f_name . ' ' . $order->pharmacist->user->l_name)
+                ? trim($order->pharmacist->user->f_name.' '.$order->pharmacist->user->l_name)
                 : null,
             'items_count' => $order->items->count(),
-            'items' => $order->items->map(fn($item) => [
+            'items' => $order->items->map(fn ($item) => [
                 'medication_id' => $item->medication_id,
                 'trade_name' => $item->medication?->product?->name,
                 'quantity' => $item->quantity,
