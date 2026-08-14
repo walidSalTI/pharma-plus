@@ -39,6 +39,7 @@ return [
 
     'groq' => [
         'api_key' => env('SERVICES_GROQ_API_KEY'),
+        'api_2key' => env('SERVICES_GROQ_API_KEY_EPD'),
     ],
 
     'qwen' => [
