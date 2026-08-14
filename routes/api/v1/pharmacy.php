@@ -154,6 +154,10 @@ Route::prefix('pharmacist')->group(function () {
             Route::get('reports/inventory-expiring', [ReportController::class, 'expiringInventory']);
             Route::get('reports/slow-moving', [ReportController::class, 'slowMoving']);
             Route::get('reports/staff-performance', [ReportController::class, 'staffPerformance']);
+            Route::post('reports/ai-insights', [ReportController::class, 'generateAiInsights']);
+            Route::get('reports/ai-insights', [ReportController::class, 'getLatestAiInsight']);
+            Route::post('reports/ai-insights/epidemic', [ReportController::class, 'generateEpidemicReport']);
+            Route::get('reports/ai-insights/epidemic', [ReportController::class, 'getLatestEpidemicReport']);
 
             // Orders (FR-PH-2.3) — list, filter & status lifecycle
             Route::prefix('orders')->group(function () {

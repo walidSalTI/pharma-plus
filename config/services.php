@@ -41,4 +41,10 @@ return [
         'api_key' => env('SERVICES_GROQ_API_KEY'),
     ],
 
+    'qwen' => [
+        'url' => env('QWEN_API_URL', 'http://127.0.0.1:11434/api/generate'),
+        'model' => env('QWEN_MODEL', 'qwen2.5:3b'),
+        'timeout' => env('QWEN_TIMEOUT', 60),
+    ],
+
 ];
