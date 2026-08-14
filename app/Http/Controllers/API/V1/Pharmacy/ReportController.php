@@ -6,17 +6,22 @@ namespace App\Http\Controllers\API\V1\Pharmacy;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\V1\Pharmacy\DemandReportRequest;
+use App\Http\Requests\API\V1\Pharmacy\EpidemicReportRequest;
 use App\Http\Requests\API\V1\Pharmacy\ExpiryReportRequest;
 use App\Http\Requests\API\V1\Pharmacy\FinancialReportRequest;
 use App\Http\Requests\API\V1\Pharmacy\SlowMovingReportRequest;
 use App\Http\Requests\API\V1\Pharmacy\StaffPerformanceReportRequest;
 use App\Http\Requests\API\V1\Pharmacy\TopMedicationsReportRequest;
+use App\Http\Resources\API\V1\Pharmacy\AiReportAnalysisResource;
 use App\Http\Resources\API\V1\Pharmacy\DemandResource;
 use App\Http\Resources\API\V1\Pharmacy\ExpiringInventoryResource;
 use App\Http\Resources\API\V1\Pharmacy\FinancialReportResource;
 use App\Http\Resources\API\V1\Pharmacy\SlowMovingResource;
 use App\Http\Resources\API\V1\Pharmacy\StaffPerformanceResource;
 use App\Http\Resources\API\V1\Pharmacy\TopMedicationResource;
+use App\Jobs\GenerateAiAnalysisJob;
+use App\Jobs\GenerateEpidemicAnalysisJob;
+use App\Models\AiReportAnalysis;
 use App\Models\Pharmacy;
 use App\Services\ReportService;
 use Carbon\Carbon;
@@ -207,6 +212,138 @@ class ReportController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => StaffPerformanceResource::collection($items),
+        ]);
+    }
+
+    /**
+     * Trigger or Refresh AI-Powered Financial & Operational Insights Generation.
+     *
+     * Validates start_date/end_date (and optional type: financial, inventory, full)
+     * via FinancialReportRequest. Resolves the pharmacy through route binding and
+     * authorizes against the `manage` permission. Uses updateOrCreate keyed on
+     * (pharmacy_id, type) so only the LATEST analysis is kept per pharmacy and
+     * report type — old analyses are overwritten instead of piling up. The record
+     * is stored as `pending` with nulled snapshot/insights, then the heavy work is
+     * dispatched to the background GenerateAiAnalysisJob which snapshots the
+     * ReportService payload, calls Qwen, and flips status to completed/failed.
+     *
+     * @return JsonResponse 202 { status, message, data: { analysis_id, type, status, updated_at } }
+     */
+    public function generateAiInsights(FinancialReportRequest $request, Pharmacy $pharmacy): JsonResponse
+    {
+        $this->authorize('manage', $pharmacy);
+
+        $validated = $request->validated();
+        $reportType = $validated['type'] ?? 'full';
+
+        $analysis = AiReportAnalysis::updateOrCreate(
+            [
+                'pharmacy_id' => $pharmacy->id,
+                'type' => $reportType,
+            ],
+            [
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'status' => 'pending',
+                'input_snapshot' => null,
+                'ai_insights' => null,
+            ]
+        );
+
+        GenerateAiAnalysisJob::dispatch($analysis);
+
+        return response()->json([
+            'status' => 'accepted',
+            'message' => 'AI analysis generation started.',
+            'data' => [
+                'analysis_id' => $analysis->id,
+                'type' => $analysis->type,
+                'status' => $analysis->status,
+                'updated_at' => $analysis->updated_at->toIso8601String(),
+            ],
+        ], 202);
+    }
+
+    /**
+     * Fetch the LATEST generated AI Insight for the pharmacy.
+     *
+     * Authorizes against the `manage` permission. Reads the requested report
+     * type from the `type` query parameter (defaults to `full`) and returns the
+     * most recent AiReportAnalysis record for (pharmacy_id, type) — failing with
+     * 404 when none has been generated yet. Wrapped in AiReportAnalysisResource.
+     *
+     * @return JsonResponse 200 { status, data: AiReportAnalysisResource }
+     */
+    public function getLatestAiInsight(Pharmacy $pharmacy, Request $request): JsonResponse
+    {
+        $this->authorize('manage', $pharmacy);
+
+        $type = (string) $request->query('type', 'full');
+
+        $analysis = AiReportAnalysis::where('pharmacy_id', $pharmacy->id)
+            ->where('type', $type)
+            ->firstOrFail();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => new AiReportAnalysisResource($analysis),
+        ]);
+    }
+
+    /**
+     * Dispatch Epidemic Analysis to the Queue (Groq / Llama).
+     *
+     * Creates a new AiReportAnalysis record with type `epidemic_demand` in the
+     * `pending` state, dispatches GenerateEpidemicAnalysisJob, and returns 202.
+     * The job aggregates the top medication usages (resolved_usage) from search
+     * telemetry within a 10km radius over the past week, calls
+     * EpidemicAnalysisService, and flips the status to completed/failed.
+     *
+     * @return JsonResponse 202 { message, data: AiReportAnalysisResource }
+     */
+    public function generateEpidemicReport(EpidemicReportRequest $request, Pharmacy $pharmacy): JsonResponse
+    {
+        $this->authorize('manage', $pharmacy);
+
+        // إنشاء سجل التحليل بوضع المبدئي 'pending'
+        $analysisRecord = AiReportAnalysis::create([
+            'pharmacy_id' => $pharmacy->id,
+            'type' => 'epidemic_demand',
+            'status' => 'pending',
+            'input_snapshot' => [],
+            'ai_insights' => null,
+        ]);
+
+        // إرسال المهمة للـ Queue
+        GenerateEpidemicAnalysisJob::dispatch($analysisRecord);
+
+        return response()->json([
+            'message' => 'تم إرسال طلب تحليل انتشار الجائحة بنجاح، التقرير قيد المعالجة.',
+            'data' => new AiReportAnalysisResource($analysisRecord),
+        ], 202);
+    }
+
+    /**
+     * Get the latest Epidemic Analysis result.
+     *
+     * Authorizes against the `manage` permission and returns the most recent
+     * AiReportAnalysis record for (pharmacy_id, type='epidemic_demand') — failing
+     * with 404 when none has been generated yet. Wrapped in AiReportAnalysisResource.
+     *
+     * @return JsonResponse 200 { status, data: AiReportAnalysisResource }
+     */
+    public function getLatestEpidemicReport(Pharmacy $pharmacy): JsonResponse
+    {
+        $this->authorize('manage', $pharmacy);
+
+        $analysis = AiReportAnalysis::where('pharmacy_id', $pharmacy->id)
+            ->where('type', 'epidemic_demand')
+            ->latest('id')
+            ->firstOrFail();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => new AiReportAnalysisResource($analysis),
         ]);
     }
 
