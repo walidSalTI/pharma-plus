@@ -18,7 +18,7 @@ class EpidemicAnalysisService
 
     public function __construct()
     {
-        $this->apiKey = (string) config('services.groq.api_key');
+        $this->apiKey = (string) config('services.groq.api_2key');
         $this->baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
         $this->model = 'llama-3.3-70b-versatile';
     }
