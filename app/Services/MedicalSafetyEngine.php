@@ -550,7 +550,10 @@ class MedicalSafetyEngine
 
                 $ingredientA = $ingredients->get($ingA);
                 $ingredientB = $ingredients->get($ingB);
-                if (! $ingredientA || ! $ingredientB) {
+                if (! $ingredientA) {
+                    continue;
+                }
+                if (! $ingredientB) {
                     continue;
                 }
 

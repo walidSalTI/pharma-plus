@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\API\V1\Pharmacy;
 
-
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\V1\Pharmacy\ListOrdersRequest;
 use App\Http\Requests\API\V1\Pharmacy\UpdateOrderStatusRequest;

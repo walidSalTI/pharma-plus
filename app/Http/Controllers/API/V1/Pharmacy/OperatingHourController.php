@@ -128,7 +128,6 @@ class OperatingHourController extends Controller
             ->orderBy('day_of_week')
             ->get();
 
-
         $status = $isClosed ? 'closed for vacation' : 'reopened';
 
         return response()->json([

@@ -271,11 +271,11 @@ class SearchController extends Controller
 
     private function resolveMedications(string $query): Collection
     {
-        $byTradeName = Medication::with('activeIngredients', 'product')
+        $byTradeName = Medication::with('activeIngredients', 'product', 'usage')
             ->whereHas('product', fn ($q) => $q->where('name', 'like', '%'.$query.'%'))
             ->get();
 
-        $byIngredient = Medication::with('activeIngredients', 'product')
+        $byIngredient = Medication::with('activeIngredients', 'product', 'usage')
             ->whereHas('activeIngredients', fn ($q) => $q->where('ingredient_name_en', 'like', '%'.$query.'%'))
             ->get();
 
@@ -320,6 +320,7 @@ class SearchController extends Controller
                     'searched_query' => $query,
                     'resolved_product_name' => null,
                     'resolved_active_ingredient_id' => null,
+                    'resolved_usage' => null,
                     'latitude' => $lat,
                     'longitude' => $lng,
                     'created_at' => now(),
@@ -334,6 +335,7 @@ class SearchController extends Controller
             // نمر على كل دواء تم استخراجه مطابقةً للبحث
             foreach ($matchedMedications as $medication) {
                 $productName = $medication->product?->name ?? 'Unknown';
+                $medicationUsage = $medication->usage?->name;
 
                 // إذا كان للدواء مواد فعالة، نسجل كل مادة مع اسم المنتج الصحيح
                 if ($medication->activeIngredients->isNotEmpty()) {
@@ -342,6 +344,7 @@ class SearchController extends Controller
                             'searched_query' => $query,                  // الكلمة كما كتبها المريض (panadl)
                             'resolved_product_name' => $productName,     // الاسم الصريح والدقيق (Panadol)
                             'resolved_active_ingredient_id' => $ingredient->id,
+                            'resolved_usage' => $medicationUsage,
                             'latitude' => $lat,
                             'longitude' => $lng,
                             'created_at' => $now,
@@ -353,6 +356,7 @@ class SearchController extends Controller
                         'searched_query' => $query,
                         'resolved_product_name' => $productName,
                         'resolved_active_ingredient_id' => null,
+                        'resolved_usage' => $medicationUsage,
                         'latitude' => $lat,
                         'longitude' => $lng,
                         'created_at' => $now,

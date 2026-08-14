@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function () {
             Route::middleware('api')
-                ->prefix('api/v1')
+                ->prefix(env('API_PREFIX', 'v1'))
                 ->group(__DIR__.'/../routes/api_v1.php');
         }
     )

@@ -16,6 +16,7 @@ class SearchTelemetry extends Model
         'searched_query',
         'resolved_product_name',
         'resolved_active_ingredient_id',
+        'resolved_usage',
         'latitude',
         'longitude',
     ];
