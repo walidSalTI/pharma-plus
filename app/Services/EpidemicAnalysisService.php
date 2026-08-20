@@ -20,7 +20,7 @@ class EpidemicAnalysisService
     {
         $this->apiKey = (string) config('services.groq.api_2key');
         $this->baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
-        $this->model = 'llama-3.3-70b-versatile';
+        $this->model = 'openai/gpt-oss-120b';
     }
 
     /**
@@ -31,6 +31,7 @@ class EpidemicAnalysisService
      */
     public function analyzeEpidemicDemand(array $topUsages): ?array
     {
+        logger()->info('Analyzing epidemic demand', ['topUsages' => $topUsages]);
         if ($topUsages === []) {
             return null;
         }
