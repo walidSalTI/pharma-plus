@@ -10,9 +10,9 @@ use App\Http\Controllers\API\V1\TwoFactorController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('rep')->group(function () {
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
 
-    Route::post('two-factor/verify', [TwoFactorController::class, 'verify']);
+    Route::post('two-factor/verify', [TwoFactorController::class, 'verify'])->middleware('throttle:login');
 
     Route::middleware(['auth:sanctum', 'role:scientific_rep'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);

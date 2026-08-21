@@ -20,9 +20,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Medication catalog
-Route::get('medications', [MedicationController::class, 'index']);
+Route::get('medications', [MedicationController::class, 'index'])->middleware('throttle:public-search');
 
 // Category hierarchy cascading dropdowns
-Route::get('categories', [CategoryController::class, 'index']);
-Route::get('categories/{category}/titles', [CategoryController::class, 'titles']);
-Route::get('titles/{title}/usages', [CategoryController::class, 'usages']);
+Route::get('categories', [CategoryController::class, 'index'])->middleware('throttle:public-search');
+Route::get('categories/{category}/titles', [CategoryController::class, 'titles'])->middleware('throttle:public-search');
+Route::get('titles/{title}/usages', [CategoryController::class, 'usages'])->middleware('throttle:public-search');
