@@ -30,8 +30,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 // ─── Public Endpoints (no auth required) ────────────────────────────
-Route::get('chronic-diseases', [DiseaseController::class, 'index']);
-Route::get('chronic-diseases/{chronicDisease}', [DiseaseController::class, 'show']);
+Route::get('chronic-diseases', [DiseaseController::class, 'index'])->middleware('throttle:public-search');
+Route::get('chronic-diseases/{chronicDisease}', [DiseaseController::class, 'show'])->middleware('throttle:public-search');
 
 // ─── Admin-only Endpoints ────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {

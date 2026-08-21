@@ -40,10 +40,10 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('pharmacist')->group(function () {
 
     // ─── Authentication (FR-PH-1) — no auth ───────────────────────────
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:otp-request');
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
 
-    Route::post('two-factor/verify', [TwoFactorController::class, 'verify']);
+    Route::post('two-factor/verify', [TwoFactorController::class, 'verify'])->middleware('throttle:login');
 
     // ─── Authenticated Routes ──────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'role:pharmacist'])->group(function () {

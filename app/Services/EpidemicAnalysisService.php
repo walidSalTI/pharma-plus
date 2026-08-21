@@ -44,7 +44,7 @@ class EpidemicAnalysisService
 
     private function buildSystemPrompt(): string
     {
-        return <<<PROMPT
+        return <<<'PROMPT'
 You are an expert Epidemiologist and Clinical Pharmacologist analyzing weekly medication search telemetry to detect potential disease outbreaks.
 
 Strict Rules for Analysis:
@@ -106,7 +106,7 @@ PROMPT;
                 ]);
 
             if (! $response->successful()) {
-                Log::warning('Epidemic Llama API request failed: ' . $response->body());
+                Log::warning('Epidemic Llama API request failed: '.$response->body());
 
                 return null;
             }
@@ -122,7 +122,7 @@ PROMPT;
 
             return json_decode((string) $content, true);
         } catch (Exception $e) {
-            Log::error('Exception in EpidemicAnalysisService: ' . $e->getMessage());
+            Log::error('Exception in EpidemicAnalysisService: '.$e->getMessage());
 
             return null;
         }

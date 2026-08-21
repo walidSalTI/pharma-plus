@@ -10,12 +10,12 @@ use App\Http\Controllers\API\V1\TwoFactorController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('doctor')->group(function () {
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:otp-request');
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
 
-    Route::post('two-factor/verify', [TwoFactorController::class, 'verify']);
+    Route::post('two-factor/verify', [TwoFactorController::class, 'verify'])->middleware('throttle:login');
 
-    Route::get('list', [DoctorController::class, 'index']);
+    Route::get('list', [DoctorController::class, 'index'])->middleware('throttle:public-search');
 
     Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);

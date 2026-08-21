@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public admin auth routes
 Route::prefix('admin')->group(function () {
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
 });
 
 // Protected admin routes

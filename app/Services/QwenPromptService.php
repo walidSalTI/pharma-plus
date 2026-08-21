@@ -8,12 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class QwenPromptService
 {
-    protected QwenApiService $qwenApiService;
-
-    public function __construct(QwenApiService $qwenApiService)
-    {
-        $this->qwenApiService = $qwenApiService;
-    }
+    public function __construct(protected QwenApiService $qwenApiService) {}
 
     /**
      * تحليل التقرير المالي واستخراج المرئيات بالذكاء الاصطناعي
