@@ -31,10 +31,10 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('patient')->group(function () {
 
     // ─── Public Routes (no auth required) ─────────────────────────────────
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
-    Route::post('search', SearchController::class);
-    Route::post('search/precheck', [SearchController::class, 'precheck']);
+    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:otp-request');
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::post('search', SearchController::class)->middleware('throttle:public-search');
+    Route::post('search/precheck', [SearchController::class, 'precheck'])->middleware('throttle:public-search');
 
     // ─── Authenticated Patient Routes ─────────────────────────────────────
     Route::middleware(['auth:sanctum', 'role:patient'])->group(function () {

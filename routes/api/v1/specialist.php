@@ -10,7 +10,7 @@ use App\Http\Controllers\API\V1\Specialist\RiskMappingController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('specialist')->group(function () {
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
 
     Route::middleware(['auth:sanctum', 'role:specialist'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
